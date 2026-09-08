@@ -1,0 +1,41 @@
+// use prisma-next
+enum WorkOrderStatus {
+  @@type("pg/text@1")
+
+  open = "open"
+  in_progress = "in_progress"
+  completed = "completed"
+  cancelled = "cancelled"
+}
+
+
+enum UserRole {
+  @@type("pg/text@1")
+
+  dispatcher = "dispatcher"
+  technician = "technician"
+}
+
+model WorkOrder {
+  id           Uuid                       @id @default(uuid())
+  title        VarChar(120)
+  customerName VarChar(120)               @map("customer_name")
+  status       WorkOrderStatus            @default(open)
+  createdAt    TimestamptzString          @default(now()) @map("created_at")
+  updatedAt    temporal.updatedAtString() @map("updated_at")
+
+  @@map("work_orders")
+}
+
+
+model User{
+  id       Uuid              @id @default(uuid())
+  displayName VarChar(120)      @map("display_name")
+  email     VarChar(255)      @unique
+  passwordHash  VarChar(255)  @map("password_hash")
+  role     UserRole           @default(technician)
+  createdAt TimestamptzString @default(now()) @map("created_at")
+  updatedAt temporal.updatedAtString() @map("updated_at")
+
+  @@map("users")
+}
