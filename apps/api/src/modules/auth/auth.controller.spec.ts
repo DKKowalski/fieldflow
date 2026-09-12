@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
+import { AuthGuard } from './auth.guard.js';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -8,6 +9,7 @@ describe('AuthController', () => {
   beforeEach(async () => {
     const authServiceMock = {
       register: vi.fn(),
+      login: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -18,7 +20,12 @@ describe('AuthController', () => {
           useValue: authServiceMock,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard)
+      .useValue({
+        canActivate: vi.fn(() => true),
+      })
+      .compile();
 
     controller = module.get<AuthController>(AuthController);
   });

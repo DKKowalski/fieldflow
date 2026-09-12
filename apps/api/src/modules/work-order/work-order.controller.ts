@@ -1,9 +1,19 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { WorkOrderService } from './work-order.service.js';
 import { CreateWorkOrderDto } from './dto/create-work-order.dto.js';
 import { UpdateWorkOrderDto } from './dto/update-work-order.dto.js';
 import { UpdateWorkOrderStatusDto } from './dto/update-work-order-status.dto.js';
+import { AuthGuard } from '../auth/auth.guard.js';
 
+@UseGuards(AuthGuard)
 @Controller('work-orders')
 export class WorkOrderController {
   constructor(private readonly workOrderService: WorkOrderService) {}
