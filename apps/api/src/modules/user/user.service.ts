@@ -4,7 +4,6 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto.js';
-import { UpdateUserDto } from './dto/update-user.dto.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type { Varchar } from '@prisma/orm-postgres/target/codec-types';
 import * as argon2 from 'argon2';
@@ -72,13 +71,5 @@ export class UserService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
     return user;
-  }
-
-  async update(id: string, _updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
-
-  async remove(id: string) {
-    return `This action removes a #${id} user`;
   }
 }

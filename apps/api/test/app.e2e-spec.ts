@@ -104,6 +104,36 @@ describe('AppController (e2e)', () => {
     );
   });
 
+  it('/users (GET) rejects requests without a token', () => {
+    return request(app.getHttpServer()).get('/users').expect(401);
+  });
+
+  it('/users (GET) rejects a technician', async () => {
+    const accessToken = await jwtService.signAsync({
+      sub: '00000000-0000-4000-8000-000000000001',
+      role: 'technician',
+    });
+
+    await request(app.getHttpServer())
+      .get('/users')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(403);
+  });
+
+  it('/users (GET) accepts a dispatcher', async () => {
+    const accessToken = await jwtService.signAsync({
+      sub: '00000000-0000-4000-8000-000000000001',
+      role: 'dispatcher',
+    });
+
+    const response = await request(app.getHttpServer())
+      .get('/users')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
+
+    expect(response.body).toEqual(expect.any(Array));
+  });
+
   afterEach(async () => {
     await app.close();
   });
