@@ -24,6 +24,17 @@ model WorkOrder {
   createdAt    TimestamptzString          @default(now()) @map("created_at")
   updatedAt    temporal.updatedAtString() @map("updated_at")
 
+  assignedTechnicianId Uuid? @map("assigned_technician_id")
+
+  assignedTechnician User? @relation(
+    fields: [assignedTechnicianId],
+    references: [id],
+    onDelete: SetNull,
+    onUpdate: Cascade
+  )
+
+  @@index([assignedTechnicianId])
+
   @@map("work_orders")
 }
 

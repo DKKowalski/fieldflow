@@ -151,6 +151,13 @@
           },
           "WorkOrder": {
             "fields": {
+              "assignedTechnicianId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
               "createdAt": {
                 "nullable": false,
                 "type": {
@@ -206,9 +213,28 @@
                 }
               }
             },
-            "relations": {},
+            "relations": {
+              "assignedTechnician": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "assignedTechnicianId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              }
+            },
             "storage": {
               "fields": {
+                "assignedTechnicianId": {
+                  "column": "assigned_technician_id"
+                },
                 "createdAt": {
                   "column": "created_at"
                 },
@@ -333,6 +359,11 @@
                 }
               ],
               "columns": {
+                "assigned_technician_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": true
+                },
                 "created_at": {
                   "codecId": "pg/timestamptz-string@1",
                   "default": {
@@ -384,8 +415,36 @@
                   "nullable": false
                 }
               },
-              "foreignKeys": [],
-              "indexes": [],
+              "foreignKeys": [
+                {
+                  "onDelete": "setNull",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "assigned_technician_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "work_orders"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "assigned_technician_id"
+                  ],
+                  "name": "work_orders_assigned_technician_id_idx_5fd8c3da",
+                  "prefix": "work_orders_assigned_technician_id_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -417,7 +476,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "9ec11ab22a7c5a041f44303a1b3978e79465ca27bb14f9d0eedb256131d6654d"
+    "storageHash": "9d7645e1833698e77fb4ac82dfcf0583d52edfc333030497efe9e944de122e2f"
   },
   "execution": {
     "executionHash": "e90676169635c5cb0b2f6192905d91185ba5d1045305e7d01e38fd7a6952bb89",

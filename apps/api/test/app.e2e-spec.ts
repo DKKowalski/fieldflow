@@ -31,7 +31,7 @@ describe('AppController (e2e)', () => {
 
   it('/work-orders (GET) accepts a valid token', async () => {
     const accessToken = await jwtService.signAsync({
-      sub: 'test-user-id',
+      sub: '00000000-0000-4000-8000-000000000001',
       role: 'technician',
     });
 
@@ -43,6 +43,21 @@ describe('AppController (e2e)', () => {
     expect(response.body).toEqual(expect.any(Array));
   });
 
+  it('/work-orders (POST) rejects a technician', async () => {
+    const accessToken = await jwtService.signAsync({
+      sub: '00000000-0000-4000-8000-000000000001',
+      role: 'technician',
+    });
+
+    await request(app.getHttpServer())
+      .post('/work-orders')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        title: 'Repair air conditioner',
+        customerName: 'Ama Mensah',
+      })
+      .expect(403);
+  });
   afterEach(async () => {
     await app.close();
   });

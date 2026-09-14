@@ -1,8 +1,10 @@
 import type { Request } from 'express';
 
+export type UserRole = 'dispatcher' | 'technician';
+
 export interface AccessTokenPayload {
   sub: string;
-  role: string;
+  role: UserRole;
   iat: number;
   exp: number;
 }

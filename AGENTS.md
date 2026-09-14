@@ -44,6 +44,7 @@ When reviewing an implementation:
 - Identify mistakes and explain why they are mistakes.
 - Give hints before replacing code.
 - Do not rewrite working code only for stylistic preference.
+- Write and update the automated tests after the developer implements application logic.
 
 For NestJS, make sure the developer understands:
 
