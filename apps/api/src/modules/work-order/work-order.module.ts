@@ -4,9 +4,10 @@ import { WorkOrderService } from './work-order.service.js';
 import { PrismaModule } from '../../prisma/prisma.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { UserModule } from '../user/user.module.js';
+import { CustomerModule } from '../customer/customer.module.js';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UserModule],
+  imports: [PrismaModule, AuthModule, UserModule, CustomerModule],
   controllers: [WorkOrderController],
   providers: [WorkOrderService],
 })

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MaxLength, IsUUID } from 'class-validator';
 
 export class UpdateWorkOrderDto {
   @IsOptional()
@@ -8,8 +8,6 @@ export class UpdateWorkOrderDto {
   title?: string;
 
   @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(120)
-  customerName?: string;
+  @IsUUID()
+  customerId?: string;
 }

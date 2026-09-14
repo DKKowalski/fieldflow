@@ -19,12 +19,13 @@ enum UserRole {
 model WorkOrder {
   id           Uuid                       @id @default(uuid())
   title        VarChar(120)
-  customerName VarChar(120)               @map("customer_name")
+  
   status       WorkOrderStatus            @default(open)
   createdAt    TimestamptzString          @default(now()) @map("created_at")
   updatedAt    temporal.updatedAtString() @map("updated_at")
 
   assignedTechnicianId Uuid? @map("assigned_technician_id")
+  customerId Uuid @map("customer_id")
 
   assignedTechnician User? @relation(
     fields: [assignedTechnicianId],
@@ -33,7 +34,17 @@ model WorkOrder {
     onUpdate: Cascade
   )
 
+
+  customer Customer @relation(
+    fields: [customerId],
+    references: [id],
+    onDelete: Restrict,
+    onUpdate: Cascade
+  )
+
   @@index([assignedTechnicianId])
+
+  @@index([customerId]) 
 
   @@map("work_orders")
 }
@@ -49,4 +60,16 @@ model User{
   updatedAt temporal.updatedAtString() @map("updated_at")
 
   @@map("users")
+}
+
+
+model Customer {
+  id        Uuid                       @id @default(uuid())
+  name      VarChar(120)
+  phone     VarChar(30)
+  email     VarChar(255)?
+  createdAt TimestamptzString          @default(now()) @map("created_at")
+  updatedAt temporal.updatedAtString() @map("updated_at")
+
+  @@map("customers")
 }

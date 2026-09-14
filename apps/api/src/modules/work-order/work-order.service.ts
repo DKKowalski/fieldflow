@@ -12,6 +12,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import type { Varchar } from '@prisma/orm-postgres/target/codec-types';
 import { UserService } from '../user/user.service.js';
 import type { AccessTokenPayload } from '../auth/auth.types.js';
+import { CustomerService } from '../customer/customer.service.js';
 
 const ALLOWED_STATUS_TRANSITIONS: Record<WorkOrderStatus, WorkOrderStatus[]> = {
   [WorkOrderStatus.OPEN]: [
@@ -31,6 +32,7 @@ export class WorkOrderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
+    private readonly customerService: CustomerService,
   ) {}
 
   async findAll(user: AccessTokenPayload) {
@@ -56,11 +58,12 @@ export class WorkOrderService {
   }
 
   async create(body: CreateWorkOrderDto) {
-    const workOrder = await this.prisma.client.orm.public.WorkOrder.create({
-      title: body.title as Varchar<120>,
-      customerName: body.customerName as Varchar<120>,
+    const customer = await this.customerService.findOne(body.customerId);
+
+    return await this.prisma.client.orm.public.WorkOrder.create({
+      title: body.title.trim() as Varchar<120>,
+      customerId: customer.id,
     });
-    return workOrder;
   }
 
   async updateStatus(
@@ -102,12 +105,19 @@ export class WorkOrderService {
   }
 
   async update(id: string, body: UpdateWorkOrderDto) {
+    const customer =
+      body.customerId !== undefined
+        ? await this.customerService.findOne(body.customerId)
+        : undefined;
+
     const data = {
       ...(body.title !== undefined
-        ? { title: body.title as Varchar<120> }
+        ? { title: body.title.trim() as Varchar<120> }
         : {}),
-      ...(body.customerName !== undefined
-        ? { customerName: body.customerName as Varchar<120> }
+      ...(customer !== undefined
+        ? {
+            customerId: customer.id,
+          }
         : {}),
     };
 

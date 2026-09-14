@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'39327f001d756fce70f1079ace172da08c27d41674b917961e851d231de4487b'>;
+  StorageHashBase<'e4c92c51c3d960548801e9736053333bd5cba8f811557fdfd71227ef50e195fd'>;
 export type ExecutionHash =
   ExecutionHashBase<'66c38940a6628a6ea291af83638d357025975a76b348e6a3ba8d710cf87593a6'>;
 export type ProfileHash =
@@ -261,11 +261,12 @@ export type FieldOutputTypes = {
     readonly WorkOrder: {
       readonly id: CodecTypes['pg/uuid@1']['output'];
       readonly title: Varchar<120>;
+      readonly customerName: Varchar<120>;
       readonly status: 'open' | 'in_progress' | 'completed' | 'cancelled';
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly assignedTechnicianId: CodecTypes['pg/uuid@1']['output'] | null;
-      readonly customerId: CodecTypes['pg/uuid@1']['output'];
+      readonly customerId: CodecTypes['pg/uuid@1']['output'] | null;
     };
   };
 };
@@ -291,11 +292,12 @@ export type FieldInputTypes = {
     readonly WorkOrder: {
       readonly id: CodecTypes['pg/uuid@1']['input'];
       readonly title: CodecTypes['sql/varchar@1']['input'];
+      readonly customerName: CodecTypes['sql/varchar@1']['input'];
       readonly status: 'open' | 'in_progress' | 'completed' | 'cancelled';
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly assignedTechnicianId: CodecTypes['pg/uuid@1']['input'] | null;
-      readonly customerId: CodecTypes['pg/uuid@1']['input'];
+      readonly customerId: CodecTypes['pg/uuid@1']['input'] | null;
     };
   };
 };
@@ -321,7 +323,8 @@ export type StorageColumnTypes = {
     readonly work_orders: {
       readonly assigned_technician_id: CodecTypes['pg/uuid@1']['output'] | null;
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
-      readonly customer_id: CodecTypes['pg/uuid@1']['output'];
+      readonly customer_id: CodecTypes['pg/uuid@1']['output'] | null;
+      readonly customer_name: Varchar<120>;
       readonly id: CodecTypes['pg/uuid@1']['output'];
       readonly status: 'open' | 'in_progress' | 'completed' | 'cancelled';
       readonly title: Varchar<120>;
@@ -351,7 +354,8 @@ export type StorageColumnInputTypes = {
     readonly work_orders: {
       readonly assigned_technician_id: CodecTypes['pg/uuid@1']['input'] | null;
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
-      readonly customer_id: CodecTypes['pg/uuid@1']['input'];
+      readonly customer_id: CodecTypes['pg/uuid@1']['input'] | null;
+      readonly customer_name: CodecTypes['sql/varchar@1']['input'];
       readonly id: CodecTypes['pg/uuid@1']['input'];
       readonly status: 'open' | 'in_progress' | 'completed' | 'cancelled';
       readonly title: CodecTypes['sql/varchar@1']['input'];
@@ -483,6 +487,12 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly typeParams: { readonly length: 120 };
                 };
+                readonly customer_name: {
+                  readonly nativeType: 'character varying';
+                  readonly codecId: 'sql/varchar@1';
+                  readonly nullable: false;
+                  readonly typeParams: { readonly length: 120 };
+                };
                 readonly status: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -511,7 +521,7 @@ type ContractBase = Omit<
                 readonly customer_id: {
                   readonly nativeType: 'uuid';
                   readonly codecId: 'pg/uuid@1';
-                  readonly nullable: false;
+                  readonly nullable: true;
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
@@ -726,6 +736,14 @@ type ContractBase = Omit<
                   readonly typeParams: { readonly length: 120 };
                 };
               };
+              readonly customerName: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'sql/varchar@1';
+                  readonly typeParams: { readonly length: 120 };
+                };
+              };
               readonly status: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -749,7 +767,7 @@ type ContractBase = Omit<
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
               };
               readonly customerId: {
-                readonly nullable: false;
+                readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
               };
             };
@@ -780,6 +798,7 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly id: { readonly column: 'id' };
                 readonly title: { readonly column: 'title' };
+                readonly customerName: { readonly column: 'customer_name' };
                 readonly status: { readonly column: 'status' };
                 readonly createdAt: { readonly column: 'created_at' };
                 readonly updatedAt: { readonly column: 'updated_at' };

@@ -54,10 +54,23 @@ describe('AppController (e2e)', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .send({
         title: 'Repair air conditioner',
-        customerName: 'Ama Mensah',
+        customerId: '00000000-0000-4000-8000-000000000002',
       })
       .expect(403);
   });
+
+  it('/customers (GET) rejects a technician', async () => {
+    const accessToken = await jwtService.signAsync({
+      sub: '00000000-0000-4000-8000-000000000001',
+      role: 'technician',
+    });
+
+    await request(app.getHttpServer())
+      .get('/customers')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(403);
+  });
+
   afterEach(async () => {
     await app.close();
   });

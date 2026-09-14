@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsString, MaxLength, IsUUID } from 'class-validator';
 
 export class CreateWorkOrderDto {
   @IsString()
@@ -6,8 +6,6 @@ export class CreateWorkOrderDto {
   @MaxLength(120)
   title: string;
 
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(120)
-  customerName: string;
+  @IsUUID()
+  customerId: string;
 }
