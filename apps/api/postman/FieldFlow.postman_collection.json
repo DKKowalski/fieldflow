@@ -53,6 +53,10 @@
       "value": ""
     },
     {
+      "key": "serviceLocationId",
+      "value": ""
+    },
+    {
       "key": "workOrderId",
       "value": ""
     },
@@ -372,6 +376,134 @@
                   "pm.test('updates the customer', function () {",
                   "  pm.response.to.have.status(200);",
                   "  pm.expect(pm.response.json().phone).to.eql('0207654321');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Service locations",
+      "description": "Every service-location route requires a dispatcher token.",
+      "item": [
+        {
+          "name": "Create service location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"label\": \"Main office\",\n  \"addressLine1\": \"12 Independence Avenue\",\n  \"addressLine2\": \"Second floor\",\n  \"city\": \"Accra\",\n  \"region\": \"Greater Accra\",\n  \"postalCode\": \"GA-123-4567\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/service-locations"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('creates a service location', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('serviceLocationId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "List service locations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/service-locations"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns service locations', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Get service location",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/service-locations/{{serviceLocationId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns the selected service location', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('serviceLocationId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Update service location",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Accra office\",\n  \"city\": \"Accra\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/service-locations/{{serviceLocationId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('updates the service location', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.json().label).to.eql('Accra office');",
                   "});"
                 ]
               }

@@ -73,3 +73,26 @@ model Customer {
 
   @@map("customers")
 }
+
+model ServiceLocation {
+  id           Uuid                       @id @default(uuid())
+  customerId   Uuid                       @map("customer_id")
+  label        VarChar(80)
+  addressLine1 VarChar(160)               @map("address_line_1")
+  addressLine2 VarChar(160)?              @map("address_line_2")
+  city         VarChar(100)
+  region       VarChar(100)?
+  postalCode   VarChar(20)?               @map("postal_code")
+  createdAt    TimestamptzString          @default(now()) @map("created_at")
+  updatedAt    temporal.updatedAtString() @map("updated_at")
+
+  customer Customer @relation(
+    fields: [customerId],
+    references: [id],
+    onDelete: Restrict,
+    onUpdate: Cascade
+  )
+
+  @@index([customerId])
+  @@map("service_locations")
+}
