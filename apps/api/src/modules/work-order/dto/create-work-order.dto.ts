@@ -7,5 +7,5 @@ export class CreateWorkOrderDto {
   title: string;
 
   @IsUUID()
-  customerId: string;
+  serviceLocationId: string;
 }

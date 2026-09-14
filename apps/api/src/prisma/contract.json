@@ -398,14 +398,14 @@
                   "kind": "scalar"
                 }
               },
-              "customerId": {
+              "id": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
-              "id": {
+              "serviceLocationId": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/uuid@1",
@@ -459,18 +459,18 @@
                   "namespace": "public"
                 }
               },
-              "customer": {
+              "serviceLocation": {
                 "cardinality": "N:1",
                 "on": {
                   "localFields": [
-                    "customerId"
+                    "serviceLocationId"
                   ],
                   "targetFields": [
                     "id"
                   ]
                 },
                 "to": {
-                  "model": "Customer",
+                  "model": "ServiceLocation",
                   "namespace": "public"
                 }
               }
@@ -483,11 +483,11 @@
                 "createdAt": {
                   "column": "created_at"
                 },
-                "customerId": {
-                  "column": "customer_id"
-                },
                 "id": {
                   "column": "id"
+                },
+                "serviceLocationId": {
+                  "column": "service_location_id"
                 },
                 "status": {
                   "column": "status"
@@ -785,12 +785,12 @@
                   "nativeType": "timestamptz",
                   "nullable": false
                 },
-                "customer_id": {
+                "id": {
                   "codecId": "pg/uuid@1",
                   "nativeType": "uuid",
                   "nullable": false
                 },
-                "id": {
+                "service_location_id": {
                   "codecId": "pg/uuid@1",
                   "nativeType": "uuid",
                   "nullable": false
@@ -848,7 +848,7 @@
                   "onUpdate": "cascade",
                   "source": {
                     "columns": [
-                      "customer_id"
+                      "service_location_id"
                     ],
                     "namespaceId": "public",
                     "tableName": "work_orders"
@@ -858,7 +858,7 @@
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "customers"
+                    "tableName": "service_locations"
                   }
                 }
               ],
@@ -873,10 +873,10 @@
                 },
                 {
                   "columns": [
-                    "customer_id"
+                    "service_location_id"
                   ],
-                  "name": "work_orders_customer_id_idx_e16dfa6b",
-                  "prefix": "work_orders_customer_id_idx",
+                  "name": "work_orders_service_location_id_idx_41dacfcb",
+                  "prefix": "work_orders_service_location_id_idx",
                   "unique": false
                 }
               ],
@@ -911,7 +911,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "bd2b0d36fa7cefa5e8694dcbbfd53694453b9748975fdf36716c5b63cde54c3a"
+    "storageHash": "8555445563fee706fc6944a3a19dfeaf5497589db37f0ff8949042eaeaed73c5"
   },
   "execution": {
     "executionHash": "bb132a931716a95bebdd9daaa4a973733e234ed3d7e5538f9f40b9028756962e",

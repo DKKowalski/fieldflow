@@ -9,5 +9,5 @@ export class UpdateWorkOrderDto {
 
   @IsOptional()
   @IsUUID()
-  customerId?: string;
+  serviceLocationId?: string;
 }

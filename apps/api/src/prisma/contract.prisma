@@ -25,7 +25,7 @@ model WorkOrder {
   updatedAt    temporal.updatedAtString() @map("updated_at")
 
   assignedTechnicianId Uuid? @map("assigned_technician_id")
-  customerId Uuid @map("customer_id")
+  serviceLocationId     Uuid  @map("service_location_id")
 
   assignedTechnician User? @relation(
     fields: [assignedTechnicianId],
@@ -35,8 +35,8 @@ model WorkOrder {
   )
 
 
-  customer Customer @relation(
-    fields: [customerId],
+  serviceLocation ServiceLocation @relation(
+    fields: [serviceLocationId],
     references: [id],
     onDelete: Restrict,
     onUpdate: Cascade
@@ -44,7 +44,7 @@ model WorkOrder {
 
   @@index([assignedTechnicianId])
 
-  @@index([customerId]) 
+  @@index([serviceLocationId])
 
   @@map("work_orders")
 }

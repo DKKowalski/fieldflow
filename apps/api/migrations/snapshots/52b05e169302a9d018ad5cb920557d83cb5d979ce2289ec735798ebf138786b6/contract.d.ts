@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'8555445563fee706fc6944a3a19dfeaf5497589db37f0ff8949042eaeaed73c5'>;
+  StorageHashBase<'52b05e169302a9d018ad5cb920557d83cb5d979ce2289ec735798ebf138786b6'>;
 export type ExecutionHash =
   ExecutionHashBase<'bb132a931716a95bebdd9daaa4a973733e234ed3d7e5538f9f40b9028756962e'>;
 export type ProfileHash =
@@ -277,7 +277,8 @@ export type FieldOutputTypes = {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly assignedTechnicianId: CodecTypes['pg/uuid@1']['output'] | null;
-      readonly serviceLocationId: CodecTypes['pg/uuid@1']['output'];
+      readonly customerId: CodecTypes['pg/uuid@1']['output'];
+      readonly serviceLocationId: CodecTypes['pg/uuid@1']['output'] | null;
     };
   };
 };
@@ -319,7 +320,8 @@ export type FieldInputTypes = {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly assignedTechnicianId: CodecTypes['pg/uuid@1']['input'] | null;
-      readonly serviceLocationId: CodecTypes['pg/uuid@1']['input'];
+      readonly customerId: CodecTypes['pg/uuid@1']['input'];
+      readonly serviceLocationId: CodecTypes['pg/uuid@1']['input'] | null;
     };
   };
 };
@@ -357,8 +359,9 @@ export type StorageColumnTypes = {
     readonly work_orders: {
       readonly assigned_technician_id: CodecTypes['pg/uuid@1']['output'] | null;
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly customer_id: CodecTypes['pg/uuid@1']['output'];
       readonly id: CodecTypes['pg/uuid@1']['output'];
-      readonly service_location_id: CodecTypes['pg/uuid@1']['output'];
+      readonly service_location_id: CodecTypes['pg/uuid@1']['output'] | null;
       readonly status: 'open' | 'in_progress' | 'completed' | 'cancelled';
       readonly title: Varchar<120>;
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
@@ -399,8 +402,9 @@ export type StorageColumnInputTypes = {
     readonly work_orders: {
       readonly assigned_technician_id: CodecTypes['pg/uuid@1']['input'] | null;
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly customer_id: CodecTypes['pg/uuid@1']['input'];
       readonly id: CodecTypes['pg/uuid@1']['input'];
-      readonly service_location_id: CodecTypes['pg/uuid@1']['input'];
+      readonly service_location_id: CodecTypes['pg/uuid@1']['input'] | null;
       readonly status: 'open' | 'in_progress' | 'completed' | 'cancelled';
       readonly title: CodecTypes['sql/varchar@1']['input'];
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
@@ -641,10 +645,15 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/uuid@1';
                   readonly nullable: true;
                 };
-                readonly service_location_id: {
+                readonly customer_id: {
                   readonly nativeType: 'uuid';
                   readonly codecId: 'pg/uuid@1';
                   readonly nullable: false;
+                };
+                readonly service_location_id: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: true;
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
@@ -654,6 +663,12 @@ type ContractBase = Omit<
                   readonly name: 'work_orders_assigned_technician_id_idx_5fd8c3da';
                   readonly prefix: 'work_orders_assigned_technician_id_idx';
                   readonly columns: readonly ['assigned_technician_id'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'work_orders_customer_id_idx_e16dfa6b';
+                  readonly prefix: 'work_orders_customer_id_idx';
+                  readonly columns: readonly ['customer_id'];
                   readonly unique: false;
                 },
                 {
@@ -673,6 +688,18 @@ type ContractBase = Omit<
                   readonly target: {
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'users';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'work_orders';
+                    readonly columns: readonly ['customer_id'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'customers';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -988,8 +1015,12 @@ type ContractBase = Omit<
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
               };
-              readonly serviceLocationId: {
+              readonly customerId: {
                 readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly serviceLocationId: {
+                readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
               };
             };
@@ -999,6 +1030,17 @@ type ContractBase = Omit<
                 readonly cardinality: 'N:1';
                 readonly on: {
                   readonly localFields: readonly ['assignedTechnicianId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly customer: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Customer';
+                };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['customerId'];
                   readonly targetFields: readonly ['id'];
                 };
               };
@@ -1024,6 +1066,7 @@ type ContractBase = Omit<
                 readonly createdAt: { readonly column: 'created_at' };
                 readonly updatedAt: { readonly column: 'updated_at' };
                 readonly assignedTechnicianId: { readonly column: 'assigned_technician_id' };
+                readonly customerId: { readonly column: 'customer_id' };
                 readonly serviceLocationId: { readonly column: 'service_location_id' };
               };
             };

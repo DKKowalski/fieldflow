@@ -12,7 +12,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import type { Varchar } from '@prisma/orm-postgres/target/codec-types';
 import { UserService } from '../user/user.service.js';
 import type { AccessTokenPayload } from '../auth/auth.types.js';
-import { CustomerService } from '../customer/customer.service.js';
+import { ServiceLocationService } from '../service-location/service-location.service.js';
 
 const ALLOWED_STATUS_TRANSITIONS: Record<WorkOrderStatus, WorkOrderStatus[]> = {
   [WorkOrderStatus.OPEN]: [
@@ -32,21 +32,37 @@ export class WorkOrderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
-    private readonly customerService: CustomerService,
+    private readonly serviceLocationService: ServiceLocationService,
   ) {}
 
   async findAll(user: AccessTokenPayload) {
+    const query = this.prisma.client.orm.public.WorkOrder.include(
+      'serviceLocation',
+      (serviceLocation) =>
+        serviceLocation.include('customer', (customer) =>
+          customer.select('id', 'name', 'phone', 'email'),
+        ),
+    );
+
     if (user.role === 'dispatcher') {
-      return await this.prisma.client.orm.public.WorkOrder.all();
+      return await query.all();
     }
 
-    return await this.prisma.client.orm.public.WorkOrder.where({
-      assignedTechnicianId: user.sub,
-    }).all();
+    return await query
+      .where({
+        assignedTechnicianId: user.sub,
+      })
+      .all();
   }
 
   async findOne(id: string, user: AccessTokenPayload) {
-    const workOrder = await this.prisma.client.orm.public.WorkOrder.first({
+    const workOrder = await this.prisma.client.orm.public.WorkOrder.include(
+      'serviceLocation',
+      (serviceLocation) =>
+        serviceLocation.include('customer', (customer) =>
+          customer.select('id', 'name', 'phone', 'email'),
+        ),
+    ).first({
       id,
       ...(user.role === 'technician' ? { assignedTechnicianId: user.sub } : {}),
     });
@@ -58,11 +74,13 @@ export class WorkOrderService {
   }
 
   async create(body: CreateWorkOrderDto) {
-    const customer = await this.customerService.findOne(body.customerId);
+    const serviceLocation = await this.serviceLocationService.findOne(
+      body.serviceLocationId,
+    );
 
     return await this.prisma.client.orm.public.WorkOrder.create({
       title: body.title.trim() as Varchar<120>,
-      customerId: customer.id,
+      serviceLocationId: serviceLocation.id,
     });
   }
 
@@ -105,18 +123,18 @@ export class WorkOrderService {
   }
 
   async update(id: string, body: UpdateWorkOrderDto) {
-    const customer =
-      body.customerId !== undefined
-        ? await this.customerService.findOne(body.customerId)
+    const serviceLocation =
+      body.serviceLocationId !== undefined
+        ? await this.serviceLocationService.findOne(body.serviceLocationId)
         : undefined;
 
     const data = {
       ...(body.title !== undefined
         ? { title: body.title.trim() as Varchar<120> }
         : {}),
-      ...(customer !== undefined
+      ...(serviceLocation !== undefined
         ? {
-            customerId: customer.id,
+            serviceLocationId: serviceLocation.id,
           }
         : {}),
     };

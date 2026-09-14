@@ -10,11 +10,11 @@ import {
 import type { AccessTokenPayload } from '../auth/auth.types.js';
 import type { UserService } from '../user/user.service.js';
 import { WorkOrderStatus } from './work-order.types.js';
-import type { CustomerService } from '../customer/customer.service.js';
+import type { ServiceLocationService } from '../service-location/service-location.service.js';
 
 describe('WorkOrderService', () => {
   const userService = {} as UserService;
-  const customerService = {} as CustomerService;
+  const serviceLocationService = {} as ServiceLocationService;
 
   const dispatcher: AccessTokenPayload = {
     sub: 'dispatcher-id',
@@ -36,21 +36,50 @@ describe('WorkOrderService', () => {
         {
           id: '844ea13a-bfb2-4b4a-a7c4-56f93f50f69f',
           title: 'Repair leaking pipe',
-          customerId: '9c36bcba-7a48-46ac-9c64-e9b875988634',
+          serviceLocationId: '5d757df6-5361-4553-a392-c808041595da',
           status: 'open',
+          serviceLocation: {
+            id: '5d757df6-5361-4553-a392-c808041595da',
+            label: 'Main office',
+            customer: {
+              id: '9c36bcba-7a48-46ac-9c64-e9b875988634',
+              name: 'Ama Mensah',
+              phone: '+233 24 123 4567',
+              email: 'ama@example.com',
+            },
+          },
           createdAt: '2026-09-07T10:00:00.000Z',
           updatedAt: '2026-09-07T10:00:00.000Z',
         },
       ];
 
       const all = vi.fn(async () => workOrders);
+      const selectCustomer = vi.fn(() => ({}));
+      const includeCustomer = vi.fn(
+        (
+          _relation: string,
+          configure: (query: { select: typeof selectCustomer }) => unknown,
+        ) => {
+          configure({ select: selectCustomer });
+          return {};
+        },
+      );
+      const include = vi.fn(
+        (
+          _relation: string,
+          configure: (query: { include: typeof includeCustomer }) => unknown,
+        ) => {
+          configure({ include: includeCustomer });
+          return { all };
+        },
+      );
 
       const prisma = {
         client: {
           orm: {
             public: {
               WorkOrder: {
-                all,
+                include,
               },
             },
           },
@@ -60,12 +89,26 @@ describe('WorkOrderService', () => {
       const service = new WorkOrderService(
         prisma,
         userService,
-        customerService,
+        serviceLocationService,
       );
 
       const result = await service.findAll(dispatcher);
 
       expect(result).toEqual(workOrders);
+      expect(include).toHaveBeenCalledWith(
+        'serviceLocation',
+        expect.any(Function),
+      );
+      expect(includeCustomer).toHaveBeenCalledWith(
+        'customer',
+        expect.any(Function),
+      );
+      expect(selectCustomer).toHaveBeenCalledWith(
+        'id',
+        'name',
+        'phone',
+        'email',
+      );
       expect(all).toHaveBeenCalledOnce();
     });
 
@@ -74,7 +117,7 @@ describe('WorkOrderService', () => {
         {
           id: '844ea13a-bfb2-4b4a-a7c4-56f93f50f69f',
           title: 'Repair leaking pipe',
-          customerId: '9c36bcba-7a48-46ac-9c64-e9b875988634',
+          serviceLocationId: '5d757df6-5361-4553-a392-c808041595da',
           status: 'open',
           assignedTechnicianId: technician.sub,
           createdAt: '2026-09-07T10:00:00.000Z',
@@ -84,12 +127,13 @@ describe('WorkOrderService', () => {
 
       const all = vi.fn(async () => workOrders);
       const where = vi.fn(() => ({ all }));
+      const include = vi.fn(() => ({ where }));
 
       const prisma = {
         client: {
           orm: {
             public: {
-              WorkOrder: { where },
+              WorkOrder: { include },
             },
           },
         },
@@ -98,7 +142,7 @@ describe('WorkOrderService', () => {
       const service = new WorkOrderService(
         prisma,
         userService,
-        customerService,
+        serviceLocationService,
       );
       const result = await service.findAll(technician);
 
@@ -106,6 +150,10 @@ describe('WorkOrderService', () => {
       expect(where).toHaveBeenCalledWith({
         assignedTechnicianId: technician.sub,
       });
+      expect(include).toHaveBeenCalledWith(
+        'serviceLocation',
+        expect.any(Function),
+      );
       expect(all).toHaveBeenCalledOnce();
     });
   });
@@ -117,20 +165,21 @@ describe('WorkOrderService', () => {
       const workOrder = {
         id,
         title: 'Repair leaking pipe',
-        customerId: '9c36bcba-7a48-46ac-9c64-e9b875988634',
+        serviceLocationId: '5d757df6-5361-4553-a392-c808041595da',
         status: 'open',
         createdAt: '2026-09-07T10:00:00.000Z',
         updatedAt: '2026-09-07T10:00:00.000Z',
       };
 
       const first = vi.fn(async () => workOrder);
+      const include = vi.fn(() => ({ first }));
 
       const prisma = {
         client: {
           orm: {
             public: {
               WorkOrder: {
-                first,
+                include,
               },
             },
           },
@@ -140,12 +189,16 @@ describe('WorkOrderService', () => {
       const service = new WorkOrderService(
         prisma,
         userService,
-        customerService,
+        serviceLocationService,
       );
 
       const result = await service.findOne(id, dispatcher);
 
       expect(result).toEqual(workOrder);
+      expect(include).toHaveBeenCalledWith(
+        'serviceLocation',
+        expect.any(Function),
+      );
       expect(first).toHaveBeenCalledWith({ id });
     });
 
@@ -153,13 +206,14 @@ describe('WorkOrderService', () => {
       const id = 'non-existent-id';
 
       const first = vi.fn(async () => null);
+      const include = vi.fn(() => ({ first }));
 
       const prisma = {
         client: {
           orm: {
             public: {
               WorkOrder: {
-                first,
+                include,
               },
             },
           },
@@ -169,7 +223,7 @@ describe('WorkOrderService', () => {
       const service = new WorkOrderService(
         prisma,
         userService,
-        customerService,
+        serviceLocationService,
       );
 
       await expect(service.findOne(id, dispatcher)).rejects.toThrow(
@@ -181,31 +235,31 @@ describe('WorkOrderService', () => {
   });
 
   describe('create', () => {
-    it('should create a work order for an existing customer', async () => {
+    it('should create a work order for an existing service location', async () => {
       const body = {
         title: '  Repair leaking pipe  ',
-        customerId: '9c36bcba-7a48-46ac-9c64-e9b875988634',
+        serviceLocationId: '844ea13a-bfb2-4b4a-a7c4-56f93f50f69f',
       };
 
-      const customer = {
-        id: body.customerId,
-        name: 'Ama Mensah',
+      const serviceLocation = {
+        id: body.serviceLocationId,
+        customerId: '9c36bcba-7a48-46ac-9c64-e9b875988634',
       };
 
       const createdWorkOrder = {
         id: '844ea13a-bfb2-4b4a-a7c4-56f93f50f69f',
         title: 'Repair leaking pipe',
-        customerId: customer.id,
+        serviceLocationId: serviceLocation.id,
         status: 'open',
         createdAt: '2026-09-07T10:00:00.000Z',
         updatedAt: '2026-09-07T10:00:00.000Z',
       };
 
       const create = vi.fn(async () => createdWorkOrder);
-      const findOne = vi.fn(async () => customer);
-      const mockCustomerService = {
+      const findOne = vi.fn(async () => serviceLocation);
+      const mockServiceLocationService = {
         findOne,
-      } as unknown as CustomerService;
+      } as unknown as ServiceLocationService;
 
       const prisma = {
         client: {
@@ -222,16 +276,16 @@ describe('WorkOrderService', () => {
       const service = new WorkOrderService(
         prisma,
         userService,
-        mockCustomerService,
+        mockServiceLocationService,
       );
 
       const result = await service.create(body);
 
       expect(result).toEqual(createdWorkOrder);
-      expect(findOne).toHaveBeenCalledWith(body.customerId);
+      expect(findOne).toHaveBeenCalledWith(body.serviceLocationId);
       expect(create).toHaveBeenCalledWith({
         title: 'Repair leaking pipe',
-        customerId: customer.id,
+        serviceLocationId: serviceLocation.id,
       });
     });
   });
@@ -263,7 +317,7 @@ describe('WorkOrderService', () => {
       const service = new WorkOrderService(
         prisma,
         userService,
-        customerService,
+        serviceLocationService,
       );
 
       await expect(service.update(id, body)).rejects.toThrow(NotFoundException);
@@ -283,7 +337,7 @@ describe('WorkOrderService', () => {
       const updatedWorkOrder = {
         id,
         title: body.title,
-        customerId: '9c36bcba-7a48-46ac-9c64-e9b875988634',
+        serviceLocationId: '5d757df6-5361-4553-a392-c808041595da',
         status: 'open',
         createdAt: '2026-09-07T10:00:00.000Z',
         updatedAt: '2026-09-07T10:00:00.000Z',
@@ -308,7 +362,7 @@ describe('WorkOrderService', () => {
       const service = new WorkOrderService(
         prisma,
         userService,
-        customerService,
+        serviceLocationService,
       );
 
       const result = await service.update(id, body);
@@ -320,32 +374,32 @@ describe('WorkOrderService', () => {
       expect(where).toHaveBeenCalledWith({ id });
     });
 
-    it('should update a work order with an existing customer', async () => {
+    it('should update a work order with an existing service location', async () => {
       const id = '844ea13a-bfb2-4b4a-a7c4-56f93f50f69f';
       const body = {
         title: 'Fix broken window',
-        customerId: '9c36bcba-7a48-46ac-9c64-e9b875988634',
+        serviceLocationId: '5d757df6-5361-4553-a392-c808041595da',
       };
 
-      const customer = {
-        id: body.customerId,
-        name: 'Kofi Asante',
+      const serviceLocation = {
+        id: body.serviceLocationId,
+        customerId: '9c36bcba-7a48-46ac-9c64-e9b875988634',
       };
 
       const updatedWorkOrder = {
         id,
         title: body.title,
-        customerId: customer.id,
+        serviceLocationId: serviceLocation.id,
         status: 'open',
         createdAt: '2026-09-07T10:00:00.000Z',
         updatedAt: '2026-09-07T10:00:00.000Z',
       };
 
       const update = vi.fn(async () => updatedWorkOrder);
-      const findOne = vi.fn(async () => customer);
-      const mockCustomerService = {
+      const findOne = vi.fn(async () => serviceLocation);
+      const mockServiceLocationService = {
         findOne,
-      } as unknown as CustomerService;
+      } as unknown as ServiceLocationService;
 
       const where = vi.fn(() => ({
         update,
@@ -366,28 +420,28 @@ describe('WorkOrderService', () => {
       const service = new WorkOrderService(
         prisma,
         userService,
-        mockCustomerService,
+        mockServiceLocationService,
       );
 
       const result = await service.update(id, body);
 
       expect(result).toEqual(updatedWorkOrder);
-      expect(findOne).toHaveBeenCalledWith(body.customerId);
+      expect(findOne).toHaveBeenCalledWith(body.serviceLocationId);
       expect(update).toHaveBeenCalledWith({
         title: body.title,
-        customerId: customer.id,
+        serviceLocationId: serviceLocation.id,
       });
       expect(where).toHaveBeenCalledWith({ id });
     });
 
-    it('should stop before updating when the customer does not exist', async () => {
+    it('should stop before updating when the service location does not exist', async () => {
       const id = '844ea13a-bfb2-4b4a-a7c4-56f93f50f69f';
-      const customerId = '9c36bcba-7a48-46ac-9c64-e9b875988634';
+      const serviceLocationId = '5d757df6-5361-4553-a392-c808041595da';
       const update = vi.fn();
       const where = vi.fn(() => ({ update }));
       const findOne = vi.fn(async () => {
         throw new NotFoundException(
-          `Customer with ID ${customerId} not found`,
+          `Service location with ID ${serviceLocationId} not found`,
         );
       });
 
@@ -401,21 +455,23 @@ describe('WorkOrderService', () => {
         },
       } as unknown as PrismaService;
 
-      const mockCustomerService = {
+      const mockServiceLocationService = {
         findOne,
-      } as unknown as CustomerService;
+      } as unknown as ServiceLocationService;
 
       const service = new WorkOrderService(
         prisma,
         userService,
-        mockCustomerService,
+        mockServiceLocationService,
       );
 
       await expect(
-        service.update(id, { customerId }),
-      ).rejects.toThrowError(`Customer with ID ${customerId} not found`);
+        service.update(id, { serviceLocationId }),
+      ).rejects.toThrowError(
+        `Service location with ID ${serviceLocationId} not found`,
+      );
 
-      expect(findOne).toHaveBeenCalledWith(customerId);
+      expect(findOne).toHaveBeenCalledWith(serviceLocationId);
       expect(where).not.toHaveBeenCalled();
       expect(update).not.toHaveBeenCalled();
     });
@@ -430,12 +486,13 @@ describe('WorkOrderService', () => {
         status: WorkOrderStatus.IN_PROGRESS,
         assignedTechnicianId: technician.sub,
       }));
+      const include = vi.fn(() => ({ first }));
 
       const prisma = {
         client: {
           orm: {
             public: {
-              WorkOrder: { first },
+              WorkOrder: { include },
             },
           },
         },
@@ -444,7 +501,7 @@ describe('WorkOrderService', () => {
       const service = new WorkOrderService(
         prisma,
         userService,
-        customerService,
+        serviceLocationService,
       );
 
       await expect(
@@ -457,12 +514,13 @@ describe('WorkOrderService', () => {
         id,
         status: WorkOrderStatus.OPEN,
       }));
+      const include = vi.fn(() => ({ first }));
 
       const prisma = {
         client: {
           orm: {
             public: {
-              WorkOrder: { first },
+              WorkOrder: { include },
             },
           },
         },
@@ -471,7 +529,7 @@ describe('WorkOrderService', () => {
       const service = new WorkOrderService(
         prisma,
         userService,
-        customerService,
+        serviceLocationService,
       );
 
       await expect(
