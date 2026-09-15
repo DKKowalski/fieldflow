@@ -7,6 +7,7 @@ import { CreateUserDto } from './dto/create-user.dto.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type { Varchar } from '@prisma/orm-postgres/target/codec-types';
 import * as argon2 from 'argon2';
+import type { UserRole } from '../auth/auth.types.js';
 
 @Injectable()
 export class UserService {
@@ -36,15 +37,21 @@ export class UserService {
     });
   }
 
-  async findAll() {
-    return await this.prisma.client.orm.public.User.select(
+  async findAll(role?: UserRole) {
+    const query = this.prisma.client.orm.public.User.select(
       'id',
       'displayName',
       'email',
       'role',
       'createdAt',
       'updatedAt',
-    ).all();
+    );
+
+    if (role !== undefined) {
+      return await query.where({ role }).all();
+    }
+
+    return await query.all();
   }
 
   async findByEmail(email: string) {

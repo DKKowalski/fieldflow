@@ -8,4 +8,9 @@ export class CreateWorkOrderDto {
 
   @IsUUID()
   serviceLocationId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(2000)
+  description: string;
 }

@@ -59,6 +59,26 @@ describe('AppController (e2e)', () => {
       .expect(403);
   });
 
+  it('/work-orders/:id/schedule (PATCH) rejects an invalid time range', async () => {
+    const accessToken = await jwtService.signAsync({
+      sub: '00000000-0000-4000-8000-000000000001',
+      role: 'dispatcher',
+    });
+
+    const response = await request(app.getHttpServer())
+      .patch('/work-orders/00000000-0000-4000-8000-000000000002/schedule')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        scheduledStartAt: '2026-09-15T11:00:00.000Z',
+        scheduledEndAt: '2026-09-15T09:00:00.000Z',
+      })
+      .expect(400);
+
+    expect(response.body.message).toBe(
+      'Scheduled end time must be later than scheduled start time',
+    );
+  });
+
   it('/customers (GET) rejects a technician', async () => {
     const accessToken = await jwtService.signAsync({
       sub: '00000000-0000-4000-8000-000000000001',
@@ -90,9 +110,7 @@ describe('AppController (e2e)', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .patch(
-        '/service-locations/00000000-0000-4000-8000-000000000002',
-      )
+      .patch('/service-locations/00000000-0000-4000-8000-000000000002')
       .set('Authorization', `Bearer ${accessToken}`)
       .send({
         customerId: '00000000-0000-4000-8000-000000000003',
@@ -132,6 +150,42 @@ describe('AppController (e2e)', () => {
       .expect(200);
 
     expect(response.body).toEqual(expect.any(Array));
+  });
+
+  it('/users (GET) rejects an invalid role filter', async () => {
+    const accessToken = await jwtService.signAsync({
+      sub: '00000000-0000-4000-8000-000000000001',
+      role: 'dispatcher',
+    });
+
+    await request(app.getHttpServer())
+      .get('/users?role=customer')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(400);
+  });
+
+  it('/service-locations (GET) rejects an invalid customer filter', async () => {
+    const accessToken = await jwtService.signAsync({
+      sub: '00000000-0000-4000-8000-000000000001',
+      role: 'dispatcher',
+    });
+
+    await request(app.getHttpServer())
+      .get('/service-locations?customerId=not-a-uuid')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(400);
+  });
+
+  it('/work-orders (GET) rejects an invalid status filter', async () => {
+    const accessToken = await jwtService.signAsync({
+      sub: '00000000-0000-4000-8000-000000000001',
+      role: 'dispatcher',
+    });
+
+    await request(app.getHttpServer())
+      .get('/work-orders?status=unknown')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(400);
   });
 
   afterEach(async () => {

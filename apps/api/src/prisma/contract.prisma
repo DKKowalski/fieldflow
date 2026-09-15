@@ -17,12 +17,14 @@ enum UserRole {
 }
 
 model WorkOrder {
-  id           Uuid                       @id @default(uuid())
-  title        VarChar(120)
-  
-  status       WorkOrderStatus            @default(open)
-  createdAt    TimestamptzString          @default(now()) @map("created_at")
-  updatedAt    temporal.updatedAtString() @map("updated_at")
+  id               Uuid                       @id @default(uuid())
+  title            VarChar(120)
+  description      VarChar(2000)?
+  scheduledStartAt TimestamptzString?         @map("scheduled_start_at")
+  scheduledEndAt   TimestamptzString?         @map("scheduled_end_at")
+  status           WorkOrderStatus            @default(open)
+  createdAt        TimestamptzString          @default(now()) @map("created_at")
+  updatedAt        temporal.updatedAtString() @map("updated_at")
 
   assignedTechnicianId Uuid? @map("assigned_technician_id")
   serviceLocationId     Uuid  @map("service_location_id")

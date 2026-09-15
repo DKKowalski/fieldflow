@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { PrismaService } from '../../prisma/prisma.service.js';
 import { WorkOrderService } from './work-order.service.js';
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   NotFoundException,
@@ -112,7 +113,7 @@ describe('WorkOrderService', () => {
       expect(all).toHaveBeenCalledOnce();
     });
 
-    it('should filter work orders by technician assignment', async () => {
+    it('should combine technician assignment and status filters', async () => {
       const workOrders = [
         {
           id: '844ea13a-bfb2-4b4a-a7c4-56f93f50f69f',
@@ -144,16 +145,49 @@ describe('WorkOrderService', () => {
         userService,
         serviceLocationService,
       );
-      const result = await service.findAll(technician);
+      const result = await service.findAll(technician, WorkOrderStatus.OPEN);
 
       expect(result).toEqual(workOrders);
       expect(where).toHaveBeenCalledWith({
         assignedTechnicianId: technician.sub,
+        status: WorkOrderStatus.OPEN,
       });
       expect(include).toHaveBeenCalledWith(
         'serviceLocation',
         expect.any(Function),
       );
+      expect(all).toHaveBeenCalledOnce();
+    });
+
+    it('should filter dispatcher work orders by status', async () => {
+      const workOrders = [{ id: 'work-order-id', status: 'completed' }];
+      const all = vi.fn(async () => workOrders);
+      const where = vi.fn(() => ({ all }));
+      const include = vi.fn(() => ({ where }));
+      const prisma = {
+        client: {
+          orm: {
+            public: {
+              WorkOrder: { include },
+            },
+          },
+        },
+      } as unknown as PrismaService;
+      const service = new WorkOrderService(
+        prisma,
+        userService,
+        serviceLocationService,
+      );
+
+      const result = await service.findAll(
+        dispatcher,
+        WorkOrderStatus.COMPLETED,
+      );
+
+      expect(result).toEqual(workOrders);
+      expect(where).toHaveBeenCalledWith({
+        status: WorkOrderStatus.COMPLETED,
+      });
       expect(all).toHaveBeenCalledOnce();
     });
   });
@@ -238,6 +272,7 @@ describe('WorkOrderService', () => {
     it('should create a work order for an existing service location', async () => {
       const body = {
         title: '  Repair leaking pipe  ',
+        description: '  Replace the damaged pipe beneath the sink.  ',
         serviceLocationId: '844ea13a-bfb2-4b4a-a7c4-56f93f50f69f',
       };
 
@@ -249,6 +284,7 @@ describe('WorkOrderService', () => {
       const createdWorkOrder = {
         id: '844ea13a-bfb2-4b4a-a7c4-56f93f50f69f',
         title: 'Repair leaking pipe',
+        description: 'Replace the damaged pipe beneath the sink.',
         serviceLocationId: serviceLocation.id,
         status: 'open',
         createdAt: '2026-09-07T10:00:00.000Z',
@@ -285,6 +321,7 @@ describe('WorkOrderService', () => {
       expect(findOne).toHaveBeenCalledWith(body.serviceLocationId);
       expect(create).toHaveBeenCalledWith({
         title: 'Repair leaking pipe',
+        description: 'Replace the damaged pipe beneath the sink.',
         serviceLocationId: serviceLocation.id,
       });
     });
@@ -372,6 +409,42 @@ describe('WorkOrderService', () => {
         title: body.title,
       });
       expect(where).toHaveBeenCalledWith({ id });
+    });
+
+    it('should trim and update the description', async () => {
+      const id = '844ea13a-bfb2-4b4a-a7c4-56f93f50f69f';
+      const body = {
+        description: '  Check the compressor and replace the filter.  ',
+      };
+
+      const updatedWorkOrder = {
+        id,
+        description: 'Check the compressor and replace the filter.',
+      };
+      const update = vi.fn(async () => updatedWorkOrder);
+      const where = vi.fn(() => ({ update }));
+      const prisma = {
+        client: {
+          orm: {
+            public: {
+              WorkOrder: { where },
+            },
+          },
+        },
+      } as unknown as PrismaService;
+      const service = new WorkOrderService(
+        prisma,
+        userService,
+        serviceLocationService,
+      );
+
+      const result = await service.update(id, body);
+
+      expect(result).toEqual(updatedWorkOrder);
+      expect(where).toHaveBeenCalledWith({ id });
+      expect(update).toHaveBeenCalledWith({
+        description: 'Check the compressor and replace the filter.',
+      });
     });
 
     it('should update a work order with an existing service location', async () => {
@@ -474,6 +547,90 @@ describe('WorkOrderService', () => {
       expect(findOne).toHaveBeenCalledWith(serviceLocationId);
       expect(where).not.toHaveBeenCalled();
       expect(update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('schedule', () => {
+    const id = '844ea13a-bfb2-4b4a-a7c4-56f93f50f69f';
+    const body = {
+      scheduledStartAt: '2026-09-15T09:00:00.000Z',
+      scheduledEndAt: '2026-09-15T11:00:00.000Z',
+    };
+
+    it('should update a work order schedule', async () => {
+      const scheduledWorkOrder = { id, ...body };
+      const update = vi.fn(async () => scheduledWorkOrder);
+      const where = vi.fn(() => ({ update }));
+      const prisma = {
+        client: {
+          orm: {
+            public: {
+              WorkOrder: { where },
+            },
+          },
+        },
+      } as unknown as PrismaService;
+      const service = new WorkOrderService(
+        prisma,
+        userService,
+        serviceLocationService,
+      );
+
+      const result = await service.schedule(id, body);
+
+      expect(result).toEqual(scheduledWorkOrder);
+      expect(where).toHaveBeenCalledWith({ id });
+      expect(update).toHaveBeenCalledWith(body);
+    });
+
+    it('should reject an end time that is not later than the start time', async () => {
+      const where = vi.fn();
+      const prisma = {
+        client: {
+          orm: {
+            public: {
+              WorkOrder: { where },
+            },
+          },
+        },
+      } as unknown as PrismaService;
+      const service = new WorkOrderService(
+        prisma,
+        userService,
+        serviceLocationService,
+      );
+
+      await expect(
+        service.schedule(id, {
+          scheduledStartAt: '2026-09-15T11:00:00.000Z',
+          scheduledEndAt: '2026-09-15T09:00:00.000Z',
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(where).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when the work order does not exist', async () => {
+      const update = vi.fn(async () => null);
+      const where = vi.fn(() => ({ update }));
+      const prisma = {
+        client: {
+          orm: {
+            public: {
+              WorkOrder: { where },
+            },
+          },
+        },
+      } as unknown as PrismaService;
+      const service = new WorkOrderService(
+        prisma,
+        userService,
+        serviceLocationService,
+      );
+
+      await expect(service.schedule(id, body)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

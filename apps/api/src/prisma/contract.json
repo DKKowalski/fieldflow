@@ -398,10 +398,34 @@
                   "kind": "scalar"
                 }
               },
+              "description": {
+                "nullable": true,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "length": 2000
+                  }
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "scheduledEndAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "scheduledStartAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
                   "kind": "scalar"
                 }
               },
@@ -483,8 +507,17 @@
                 "createdAt": {
                   "column": "created_at"
                 },
+                "description": {
+                  "column": "description"
+                },
                 "id": {
                   "column": "id"
+                },
+                "scheduledEndAt": {
+                  "column": "scheduled_end_at"
+                },
+                "scheduledStartAt": {
+                  "column": "scheduled_start_at"
                 },
                 "serviceLocationId": {
                   "column": "service_location_id"
@@ -785,10 +818,28 @@
                   "nativeType": "timestamptz",
                   "nullable": false
                 },
+                "description": {
+                  "codecId": "sql/varchar@1",
+                  "nativeType": "character varying",
+                  "nullable": true,
+                  "typeParams": {
+                    "length": 2000
+                  }
+                },
                 "id": {
                   "codecId": "pg/uuid@1",
                   "nativeType": "uuid",
                   "nullable": false
+                },
+                "scheduled_end_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "scheduled_start_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
                 },
                 "service_location_id": {
                   "codecId": "pg/uuid@1",
@@ -911,7 +962,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "8555445563fee706fc6944a3a19dfeaf5497589db37f0ff8949042eaeaed73c5"
+    "storageHash": "92db28b3d8cf1cdc7dcd8a77621f1db77ebe1090ee00666f8a95a0a5723689b7"
   },
   "execution": {
     "executionHash": "bb132a931716a95bebdd9daaa4a973733e234ed3d7e5538f9f40b9028756962e",

@@ -32,8 +32,14 @@ export class ServiceLocationService {
     });
   }
 
-  async findAll() {
-    return await this.prisma.client.orm.public.ServiceLocation.all();
+  async findAll(customerId?: string) {
+    const query = this.prisma.client.orm.public.ServiceLocation;
+
+    if (customerId !== undefined) {
+      return await query.where({ customerId }).all();
+    }
+
+    return await query.all();
   }
 
   async findOne(id: string) {

@@ -9,10 +9,14 @@ import { WorkOrderStatus } from './work-order.types.js';
 import { CreateWorkOrderDto } from './dto/create-work-order.dto.js';
 import { type UpdateWorkOrderDto } from './dto/update-work-order.dto.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import type { Varchar } from '@prisma/orm-postgres/target/codec-types';
+import type {
+  TimestamptzString,
+  Varchar,
+} from '@prisma/orm-postgres/target/codec-types';
 import { UserService } from '../user/user.service.js';
 import type { AccessTokenPayload } from '../auth/auth.types.js';
 import { ServiceLocationService } from '../service-location/service-location.service.js';
+import { ScheduleWorkOrderDto } from './dto/schedule-work-order.dto.js';
 
 const ALLOWED_STATUS_TRANSITIONS: Record<WorkOrderStatus, WorkOrderStatus[]> = {
   [WorkOrderStatus.OPEN]: [
@@ -35,7 +39,7 @@ export class WorkOrderService {
     private readonly serviceLocationService: ServiceLocationService,
   ) {}
 
-  async findAll(user: AccessTokenPayload) {
+  async findAll(user: AccessTokenPayload, status?: WorkOrderStatus) {
     const query = this.prisma.client.orm.public.WorkOrder.include(
       'serviceLocation',
       (serviceLocation) =>
@@ -44,13 +48,16 @@ export class WorkOrderService {
         ),
     );
 
-    if (user.role === 'dispatcher') {
+    if (user.role === 'dispatcher' && status === undefined) {
       return await query.all();
     }
 
     return await query
       .where({
-        assignedTechnicianId: user.sub,
+        ...(user.role === 'technician'
+          ? { assignedTechnicianId: user.sub }
+          : {}),
+        ...(status !== undefined ? { status } : {}),
       })
       .all();
   }
@@ -81,6 +88,7 @@ export class WorkOrderService {
     return await this.prisma.client.orm.public.WorkOrder.create({
       title: body.title.trim() as Varchar<120>,
       serviceLocationId: serviceLocation.id,
+      description: body.description.trim() as Varchar<2000>,
     });
   }
 
@@ -137,6 +145,12 @@ export class WorkOrderService {
             serviceLocationId: serviceLocation.id,
           }
         : {}),
+
+      ...(body.description !== undefined
+        ? {
+            description: body.description.trim() as Varchar<2000>,
+          }
+        : {}),
     };
 
     const workOrder = await this.prisma.client.orm.public.WorkOrder.where({
@@ -163,6 +177,30 @@ export class WorkOrderService {
       id,
     }).update({
       assignedTechnicianId: technicianId,
+    });
+
+    if (!workOrder) {
+      throw new NotFoundException(`Work order with ID ${id} not found`);
+    }
+
+    return workOrder;
+  }
+
+  async schedule(id: string, body: ScheduleWorkOrderDto) {
+    const startTime = Date.parse(body.scheduledStartAt);
+    const endTime = Date.parse(body.scheduledEndAt);
+
+    if (endTime <= startTime) {
+      throw new BadRequestException(
+        'Scheduled end time must be later than scheduled start time',
+      );
+    }
+
+    const workOrder = await this.prisma.client.orm.public.WorkOrder.where({
+      id,
+    }).update({
+      scheduledStartAt: body.scheduledStartAt as TimestamptzString,
+      scheduledEndAt: body.scheduledEndAt as TimestamptzString,
     });
 
     if (!workOrder) {

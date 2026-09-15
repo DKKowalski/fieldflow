@@ -99,6 +99,35 @@ describe('ServiceLocationService', () => {
     expect(all).toHaveBeenCalledOnce();
   });
 
+  it('should filter service locations by customer', async () => {
+    const customerId = '9c36bcba-7a48-46ac-9c64-e9b875988634';
+    const locations = [
+      {
+        id: '844ea13a-bfb2-4b4a-a7c4-56f93f50f69f',
+        customerId,
+        label: 'Main office',
+      },
+    ];
+    const all = vi.fn(async () => locations);
+    const where = vi.fn(() => ({ all }));
+    const prisma = {
+      client: {
+        orm: {
+          public: {
+            ServiceLocation: { where },
+          },
+        },
+      },
+    } as unknown as PrismaService;
+
+    const service = new ServiceLocationService(prisma, customerService);
+    const result = await service.findAll(customerId);
+
+    expect(result).toEqual(locations);
+    expect(where).toHaveBeenCalledWith({ customerId });
+    expect(all).toHaveBeenCalledOnce();
+  });
+
   it('should return one service location', async () => {
     const id = '844ea13a-bfb2-4b4a-a7c4-56f93f50f69f';
     const location = {
@@ -212,5 +241,4 @@ describe('ServiceLocationService', () => {
     );
     expect(where).toHaveBeenCalledWith({ id });
   });
-
 });
